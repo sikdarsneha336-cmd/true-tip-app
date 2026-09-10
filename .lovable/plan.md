@@ -17,10 +17,10 @@ Replace the starter screen with a polished, safety-first prototype for submittin
    - Location step offers two explicit choices: precise browser GPS opt-in or approximate area/manual entry. Explain what is captured and show the selected value before continuing.
    - Never ask for name, email, phone number, or other direct identity fields.
 
-3. **AI review preview**
-   - After review, show a transparent “AI-assisted screening” state with a non-final signal such as “Needs human review.”
-   - Explain that AI can flag inconsistencies or spam-like patterns, but cannot determine that a report is fake and never auto-rejects a report.
-   - Keep the language supportive and avoid discouraging legitimate reporting.
+3. **AI-assisted analysis preview**
+   - Show AI as an assistance layer, not a decision-maker, using simulated/mock results for incident-category classification, structured extraction of incident type/time/location, similarity detection for potentially duplicate reports, and priority suggestion.
+   - Present every result as a suggestion or signal for human review; AI must never determine whether a report is true or fake and must never automatically reject a report.
+   - Keep the language transparent, supportive, and non-discouraging for legitimate reporting.
 
 4. **Submission result**
    - Show a clear prototype-only confirmation, a generated one-time access code, and a copy control.
