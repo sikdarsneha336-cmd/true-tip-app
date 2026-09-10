@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      reports: {
+        Row: {
+          ai_analysis: Json
+          description: string
+          id: string
+          incident_category: string
+          incident_date: string
+          latitude: number | null
+          location_label: string | null
+          location_mode: string
+          longitude: number | null
+          retention_until: string
+          retrieval_code_hash: string
+          retrieval_code_hint: string
+          status: string
+          submitted_at: string
+          supporting_details: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_analysis?: Json
+          description: string
+          id?: string
+          incident_category: string
+          incident_date: string
+          latitude?: number | null
+          location_label?: string | null
+          location_mode: string
+          longitude?: number | null
+          retention_until?: string
+          retrieval_code_hash: string
+          retrieval_code_hint: string
+          status?: string
+          submitted_at?: string
+          supporting_details?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_analysis?: Json
+          description?: string
+          id?: string
+          incident_category?: string
+          incident_date?: string
+          latitude?: number | null
+          location_label?: string | null
+          location_mode?: string
+          longitude?: number | null
+          retention_until?: string
+          retrieval_code_hash?: string
+          retrieval_code_hint?: string
+          status?: string
+          submitted_at?: string
+          supporting_details?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
