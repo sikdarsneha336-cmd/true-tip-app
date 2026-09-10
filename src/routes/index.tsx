@@ -196,7 +196,7 @@ function Clearline() {
       </header>
 
       {step === "home" ? <Home onBegin={() => setStep("incident")} onRetrieve={() => setStep("retrieve")} onPrivacy={() => setPrivacyOpen(true)} /> : null}
-      {step !== "home" && step !== "retrieve" && step !== "retrieved" ? (
+      {step !== "home" && step !== "retrieve" && step !== "retrieved" && step !== "submitted" ? (
         <ReportFlow step={step} draft={draft} selectedCategory={selectedCategory} formError={formError} geoMessage={geoMessage} isSubmitting={isSubmitting} canAdvance={canAdvance} onBack={() => setStep(step === "incident" ? "home" : step === "location" ? "incident" : step === "story" ? "location" : "story")} onNext={() => setStep(step === "incident" ? "location" : step === "location" ? "story" : step === "story" ? "review" : "submitted")} onUpdate={updateDraft} onGps={chooseGps} onSubmit={handleSubmit} />
       ) : null}
       {step === "submitted" && submission ? <Submitted result={submission} onCopy={() => navigator.clipboard?.writeText(submission.retrievalCode)} onRetrieve={() => setStep("retrieve")} onReset={resetApp} /> : null}
