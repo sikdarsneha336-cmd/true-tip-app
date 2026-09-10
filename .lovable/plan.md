@@ -28,7 +28,9 @@ Replace the starter screen with a polished, safety-first prototype for submittin
    - Provide a “View my report” path that accepts the code and shows a redacted status timeline, location-sharing choice, review status, and retention note.
 
 5. **Privacy and safety surfaces**
-   - Include a dedicated privacy/safety panel or modal explaining anonymity limits, location handling, retention, human review, jurisdiction routing, and the difference between a report and an emergency call.
+   - Include a dedicated privacy/safety panel or modal explaining that the prototype does not request or store name, email, phone number, or account identity.
+   - Clearly state the limits of anonymity: that a production system would additionally need protections against network and metadata-based identification, and never claim guaranteed anonymity, untraceability, or legal confidentiality.
+   - Also cover location handling, retention, human review, jurisdiction routing, and the difference between a report and an emergency call.
    - Include a reset/clear prototype action so a new report can be started without carrying over prior form state.
 
 ## Visual direction
