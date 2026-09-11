@@ -48,6 +48,7 @@ VITE_SUPABASE_PROJECT_ID
 SUPABASE_URL
 SUPABASE_PUBLISHABLE_KEY
 SUPABASE_PROJECT_ID
+SUPABASE_SERVICE_ROLE_KEY
 ```
 
 Do not commit `.env` or place real secrets in this README. The server-side report functions also require the project’s configured service-role database access; that value is supplied by the connected environment and is never exposed to the browser.
