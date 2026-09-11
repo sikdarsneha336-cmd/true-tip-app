@@ -1,68 +1,125 @@
 # Clearline
 
-Clearline is a student project foundation for documenting unsafe situations without creating an account or providing direct identity details.
+Clearline is a student project for documenting unsafe situations without creating an account or providing direct identity details. It is a reporting-flow foundation, not an official police or emergency service.
 
-## What works today
+## Features
 
-- Multi-step incident reporting with validation and review before submission
-- Explicit location choices: precise GPS, approximate area, or manual-only context
-- Lovable Cloud persistence for reports and one-time retrieval codes
-- Anonymous report retrieval with a status timeline
-- Simulated AI assistance for category classification, structured extraction, similarity signals, and priority suggestions
-- Privacy, safety, jurisdiction, retention, and emergency-service warnings
+- Four-step report flow for category, incident timing, location, description, and review
+- Explicit precise GPS, approximate-area, or manual-only location choices
+- Server-side validation before a report is stored
+- One-time retrieval code, returned once and stored only as a hash
+- Private report retrieval with a redacted status timeline
+- Simulated AI assistance for classification, structured extraction, similarity signals, and review-priority suggestions
+- Privacy, retention, jurisdiction, human-review, and emergency-service notices
+- No name, email, phone number, account, password, or direct identity fields
 
-## Important limits
+## Limits and safety
 
-This is not a police reporting service and does not connect to real police or emergency systems. It does not guarantee anonymity, untraceability, legal confidentiality, police follow-up, or emergency response. The prototype does not request or store names, emails, phone numbers, accounts, passwords, or direct identity fields. A production system would additionally need protections against network and metadata-based identification.
+This project does not connect to police, emergency, or other authority systems. It does not guarantee anonymity, untraceability, legal confidentiality, police follow-up, or emergency response. Production use would require additional protections against network and metadata-based identification, access controls, operational policies, and jurisdiction agreements.
 
-AI results are advisory signals only. AI never determines whether a report is true or fake, never labels someone a liar, and never automatically rejects a report.
+AI output is advisory only. It never decides whether a report is true or fake, labels anyone a liar, or automatically rejects a report. The retrieval code is not authentication and has no identity-based recovery if lost.
 
-## Technology
+## Technology stack
 
-- React and TypeScript
+- React 19 and TypeScript
 - TanStack Start and TanStack Router
-- Tailwind CSS
-- Lovable Cloud database through server functions
-- Zod validation
+- Vite
+- Tailwind CSS v4
+- TanStack Query
+- Zod for server-input validation
+- Lucide React for interface icons
+- Lovable Cloud database, accessed by TanStack server functions
 
-## Run locally
+The application uses the browser Geolocation API only after the reporter explicitly chooses precise GPS. It has no evidence uploads, external AI API, police API, or separate Python/FastAPI service.
+
+## Requirements
+
+- Bun
+- A Lovable Cloud-connected project environment with the generated database environment variables available
+
+## Configuration
+
+The generated environment file supplies the browser and server database connection values. The expected variable names are:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+VITE_SUPABASE_PROJECT_ID
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_PROJECT_ID
+```
+
+Do not commit `.env` or place real secrets in this README. The server-side report functions also require the project’s configured service-role database access; that value is supplied by the connected environment and is never exposed to the browser.
+
+## Installation and local development
+
+Install dependencies:
 
 ```sh
 bun install
+```
+
+Start the development server:
+
+```sh
 bun run dev
 ```
 
-The development server runs at `http://localhost:8080`.
+Open `http://localhost:8080`.
 
-## Architecture
+Create a production build:
 
-```text
-React/TanStack UI
-        |
-Typed server functions
-        |
-Validation + privacy boundary
-        |
-Lovable Cloud reports table
-        |
-Simulated AI analysis signals
+```sh
+bun run build
 ```
 
-The browser never writes directly to the reports table. Server functions validate report input, generate a random retrieval code, store only its hash, and return the code once to the reporter. There is no identity-based recovery mechanism.
+The database migration is stored at `supabase/migrations/20260910150201_21735335-c56f-42f5-9a77-7697a651572f.sql`. In the connected project environment, apply that migration before testing report submission or retrieval. It creates the reports table, access policies, indexes, and timestamp trigger. No seed data is required.
 
-## Report fields
+## Basic usage
 
-The database stores incident category, approximate incident time, user-selected location detail, description, optional supporting details, status, advisory AI signals, submission time, and a retention deadline. Direct identity fields are intentionally absent.
+1. Choose **Begin a report**.
+2. Select a category, provide when it happened, and choose a location-sharing option.
+3. Describe observable details, then review the information.
+4. Submit and save the generated access code privately.
+5. Use **Access my report** and enter the code to view the status timeline.
 
-## Future work
+If someone is in immediate danger, contact local emergency services instead. Clearline does not provide emergency response.
 
-- Human reviewer interface and controlled status updates
-- Real retention cleanup and audit policy
-- Jurisdiction routing with explicit authority agreements
-- Security hardening against network and metadata identification
-- Evidence handling with metadata stripping and access controls
-- Optional real AI service behind the same advisory-only interface
+## Project structure
 
-## Student-project warning
+```text
+src/routes/index.tsx                 Main reporting and retrieval experience
+src/routes/__root.tsx                Shared document shell and metadata
+src/lib/reports.functions.ts         Validated submission and retrieval functions
+src/integrations/supabase/           Generated database clients and types
+src/styles.css                       Tailwind theme and global styles
+supabase/migrations/                 Database schema and policy migration
+public/favicon.ico                   Project favicon
+roadmap.md                            Development checklist
+.lovable/plan.md                      Separate development plan
+```
 
-Do not use this project as a substitute for local emergency services or an official police reporting channel.
+## Troubleshooting
+
+- If the page cannot load database-backed actions, confirm the generated environment variables are present and the reports migration has been applied.
+- If precise location is unavailable or denied, choose approximate area or manual-only location instead.
+- If a retrieval code is lost, it cannot be recovered through identity information.
+- Run `bun run build` to check for production build issues before deployment.
+
+## Deployment
+
+The repository is configured for TanStack Start and can be deployed to a compatible hosting environment after `bun run build`. Configure the same database environment values in the deployment environment and apply the migration before enabling report actions. No official police integration is configured.
+
+## Future improvements
+
+- Controlled human reviewer workflow and status updates
+- Retention cleanup and auditable access policy
+- Explicit jurisdiction routing and authority agreements
+- Stronger defenses against network and metadata identification
+- Carefully designed evidence handling with metadata stripping
+- An optional real AI service behind the same advisory-only interface
+
+## Credits
+
+The project uses open-source React, TanStack, Vite, Tailwind CSS, Zod, Lucide React, and database client libraries listed in `package.json`. No external datasets or user-uploaded media are used.
