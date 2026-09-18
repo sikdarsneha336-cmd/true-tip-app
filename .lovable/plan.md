@@ -50,6 +50,11 @@ Turn the placeholder ☰ menu icon into a working authority entry point: a login
 - **Verification**
   - Check build output; then use Playwright to confirm the login icon shows, sign-in works, the desk lists reports, and a status change persists.
 
-## Out of scope
+## Deferred, not excluded
 
-- Officer self-registration, password-reset emails, audit logs, assigning reports to specific officers, or any real police-system integration.
+These are intentionally not built now, and the structure above keeps their paths open for later:
+
+- Officer self-registration and password-reset emails (email auth is enabled; accounts are provisioned only until self-service is added).
+- Audit logs (status changes flow through one server function, a natural place to add logging).
+- Assigning reports to specific officers (`user_roles` is in place to grow into assignments).
+- Real police-system integration (status values are plain text and can map to external systems later).
