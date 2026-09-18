@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
@@ -13,15 +13,16 @@ import {
   Info,
   LockKeyhole,
   MapPin,
-  Menu,
+  LogIn,
   Radio,
   Search,
   ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { submitAnonymousReport, retrieveAnonymousReport } from "@/lib/reports.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,6 +90,11 @@ function Clearline() {
   const [formError, setFormError] = useState("");
   const submitReport = useServerFn(submitAnonymousReport);
   const retrieveReport = useServerFn(retrieveAnonymousReport);
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setHasSession(Boolean(data.session)));
+  }, []);
 
   function updateDraft<K extends keyof ReportDraft>(key: K, value: ReportDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -191,7 +197,13 @@ function Clearline() {
             <button type="button" onClick={() => setPrivacyOpen(true)} className="transition hover:text-white">Privacy & safety</button>
             <button type="button" onClick={() => setStep("retrieve")} className="transition hover:text-white">Access a report</button>
           </nav>
-          <button type="button" className="text-white md:hidden" aria-label="Open navigation"><Menu size={22} /></button>
+          <Link
+            to="/authority"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 text-white transition hover:bg-white/10 focus:outline-none focus:ring-4 focus:ring-white/20"
+            aria-label={hasSession ? "Open authority desk" : "Authority sign-in"}
+          >
+            {hasSession ? <ShieldCheck size={20} /> : <LogIn size={20} />}
+          </Link>
         </div>
       </header>
 
