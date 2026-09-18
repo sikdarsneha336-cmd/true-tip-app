@@ -156,7 +156,7 @@ function AuthorityDesk() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<AuthorityReport[]>({
     queryKey: ["authority-reports"],
     queryFn: () => listReports(),
   });
