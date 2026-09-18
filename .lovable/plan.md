@@ -1,55 +1,55 @@
-# Anonymous police reporting prototype
+# Authority sign-in and report review desk
 
 ## Goal
 
-Replace the starter screen with a polished, safety-first prototype for submitting an anonymous police report. The prototype will demonstrate the complete reporter journey without claiming to send a real report, identify a real person, or make a real AI fraud decision.
+Turn the placeholder ☰ menu icon into a working authority entry point: a login icon in the header leads to a sign-in page for police/authority staff, and signed-in staff can view submitted reports and update each report's status. Reporters' experience stays unchanged.
 
 ## Experience
 
-1. **Start screen**
-   - Present the product as a calm, trustworthy reporting service.
-   - Put the emergency warning, jurisdiction notice, and privacy promise in the first viewport.
-   - Let the user begin a report or open the private access-code lookup view.
+1. **Header change**
+   - Replace the mobile-only ☰ (`Menu`) icon with a login icon (`LogIn`), visible on all screen sizes.
+   - Clicking it navigates to the authority desk at `/authority`.
+   - When a session exists, the same spot shows a shield icon linking to the desk instead.
 
-2. **Report flow**
-   - Multi-step form for incident category, when/where it happened, description, optional supporting details, and contact preference.
-   - Client-side validation, character limits, visible progress, and review-before-submit.
-   - Location step offers two explicit choices: precise browser GPS opt-in or approximate area/manual entry. Explain what is captured and show the selected value before continuing.
-   - Never ask for name, email, phone number, or other direct identity fields.
+2. **Sign-in page (`/auth`)**
+   - Public email + password sign-in form for authority staff, styled in the existing Clearline look.
+   - No public sign-up: accounts are provisioned for staff, not self-registered.
+   - After sign-in, redirect to `/authority`. Provide a sign-out action there.
 
-3. **AI-assisted analysis preview**
-   - Show AI as an assistance layer, not a decision-maker, using simulated/mock results for incident-category classification, structured extraction of incident type/time/location, similarity detection for potentially duplicate reports, and priority suggestion.
-   - Present every result as a suggestion or signal for human review; AI must never determine whether a report is true or fake and must never automatically reject a report.
-   - Keep the language transparent, supportive, and non-discouraging for legitimate reporting.
+3. **Authority desk (`/authority`, protected)**
+   - Lists all active reports (newest first) with category, incident date, location mode/label, current status, submitted time, and the advisory AI signals already stored.
+   - Each report can be moved through: Received → Under review → Action taken → Closed.
+   - No reporter identity exists or is shown; the desk works only with report content.
+   - Signed-out visitors are redirected to `/auth` by the protected layout.
 
-4. **Submission result**
-   - Show a clear prototype-only confirmation, a generated one-time access code, and a copy control.
-   - Explain that the code is the only way to return to the report in this anonymous model and should be stored privately.
-   - Provide a “View my report” path that accepts the code and shows a redacted status timeline, location-sharing choice, review status, and retention note.
-
-5. **Privacy and safety surfaces**
-   - Include a dedicated privacy/safety panel or modal explaining that the prototype does not request or store name, email, phone number, or account identity.
-   - Clearly state the limits of anonymity: that a production system would additionally need protections against network and metadata-based identification, and never claim guaranteed anonymity, untraceability, or legal confidentiality.
-   - Also cover location handling, retention, human review, jurisdiction routing, and the difference between a report and an emergency call.
-   - Include a reset/clear prototype action so a new report can be started without carrying over prior form state.
-
-## Visual direction
-
-Use a composed public-service interface: deep ink background, warm paper surfaces, high-visibility safety yellow for warnings, and restrained signal blue/green for progress and positive states. Use a distinctive editorial sans-serif pairing, generous whitespace, crisp borders, subtle motion between steps, and no decorative gradients or generic dashboard clutter. Make the report form the primary experience on desktop and mobile.
+4. **First account and future officers**
+   - Create one initial authority account via the Auth Admin API (email confirmed, strong generated password shared with the user in chat).
+   - Structure supports adding more officers later: a `user_roles` table with an `authority` role plus a `has_role` check function.
 
 ## Technical details
 
-- Rewrite `src/routes/index.tsx` as the prototype app; keep the initial experience at `/`.
-- Update shared root metadata and add route-specific metadata for the home route; remove starter “Lovable App” placeholder copy.
-- Use existing React, TanStack Router, Tailwind tokens, Lucide icons, and existing project dependencies; do not add backend or external service dependencies.
-- Keep the prototype state in React memory only. Do not use localStorage, sessionStorage, or any real report persistence.
-- Request browser geolocation only from an explicit user action, handle denied/unavailable states, and provide the approximate/manual fallback. Do not read browser APIs during SSR or initial render.
-- Generate a clearly labeled demo access code in an event handler; never treat it as secure authentication.
-- Validate all form inputs client-side with bounded lengths and safe enum values. Since this is a front-end prototype, show the server-validation boundary in the UI copy rather than implying the data is production-ready.
-- Use semantic form controls, accessible labels, keyboard-visible focus, status announcements, responsive layouts, reduced-motion support, and no sensitive data in logs.
+- **Database migration**
+  - `create type public.app_role as enum ('authority');`
+  - `public.user_roles` table (user_id references auth.users, role, unique pair) with `GRANT SELECT` to `authenticated`, `GRANT ALL` to `service_role`, RLS enabled.
+  - `public.has_role(_user_id uuid, _role app_role)` security-definer function for non-recursive role checks.
+- **Server functions** in `src/lib/authority.functions.ts`
+  - `listAuthorityReports` and `updateReportStatus`, both `.middleware([requireSupabaseAuth])`.
+  - Each handler first verifies the caller via `has_role` on `context.supabase`, then loads `supabaseAdmin` inside the handler for the privileged read/update (reports RLS stays closed to clients).
+  - Zod-validate report id and allowed status values.
+- **Routes**
+  - `src/routes/auth.tsx` — public sign-in page.
+  - `src/routes/_authenticated/route.tsx` — integration-managed gate shape (`ssr: false`, redirect to `/auth` when no session).
+  - `src/routes/_authenticated/authority.tsx` — protected desk route.
+- **Auth config**
+  - Enable email/password sign-in; disable public signups and anonymous users.
+  - Initial user is created with email already confirmed, so no confirmation email flow is needed.
+- **Header session state**
+  - Subscribe to `supabase.auth.onAuthStateChange` once in `src/routes/__root.tsx` and invalidate the router on sign-in/out so the header icon reflects the session.
+- **Unchanged**
+  - The public report flow, retrieval flow, schema for `public.reports`, and existing RLS deny-all policy remain as they are.
+- **Verification**
+  - Check build output; then use Playwright to confirm the login icon shows, sign-in works, the desk lists reports, and a status change persists.
 
-## Out of scope for this prototype
+## Out of scope
 
-- Real police submission, police staff portal, accounts, databases, storage, authentication, or audit logs.
-- Real AI model calls or a real fake-report classifier.
-- Promises of untraceability, legal confidentiality, guaranteed anonymity, emergency response, or guaranteed police follow-up.
+- Officer self-registration, password-reset emails, audit logs, assigning reports to specific officers, or any real police-system integration.
