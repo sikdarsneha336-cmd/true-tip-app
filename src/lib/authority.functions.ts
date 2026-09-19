@@ -22,6 +22,12 @@ async function assertAuthority(supabase: SupabaseClient<Database>, userId: strin
   if (error || !data) throw new Error("Forbidden");
 }
 
+export type ReportAnalysis = {
+  classification?: { label?: string | null } | null;
+  priority?: { suggestion?: string | null } | null;
+  duplicate?: { matches?: number | null } | null;
+};
+
 export type AuthorityReport = {
   id: string;
   category: string;
@@ -29,7 +35,7 @@ export type AuthorityReport = {
   locationMode: string;
   locationLabel: string | null;
   status: string;
-  analysis: unknown;
+  analysis: ReportAnalysis;
   description: string;
   supportingDetails: string | null;
   submittedAt: string;
@@ -59,7 +65,7 @@ export const listAuthorityReports = createServerFn({ method: "GET" })
       locationMode: row.location_mode,
       locationLabel: row.location_label,
       status: row.status,
-      analysis: row.ai_analysis,
+      analysis: (row.ai_analysis ?? {}) as ReportAnalysis,
       description: row.description,
       supportingDetails: row.supporting_details,
       submittedAt: row.submitted_at,
