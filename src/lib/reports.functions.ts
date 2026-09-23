@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import type { AdvisoryAnalysis } from "@/lib/analysis.server";
 
 const locationSchema = z.object({
   mode: z.enum(["gps", "approximate", "manual"]),
@@ -34,31 +37,36 @@ function createRetrievalCode() {
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8)}`;
 }
 
-function createMockAnalysis(report: z.infer<typeof reportSchema>) {
-  const categoryLabels: Record<z.infer<typeof reportSchema>["category"], string> = {
-    violence: "Violence or threat",
-    harassment: "Harassment or intimidation",
-    theft: "Theft or property loss",
-    "safety-hazard": "Public safety hazard",
-    "suspicious-activity": "Suspicious activity",
-    other: "Other unsafe situation",
-  };
+const categoryLabels: Record<z.infer<typeof reportSchema>["category"], string> = {
+  violence: "Violence or threat",
+  harassment: "Harassment or intimidation",
+  theft: "Theft or property loss",
+  "safety-hazard": "Public safety hazard",
+  "suspicious-activity": "Suspicious activity",
+  other: "Other unsafe situation",
+};
 
-  return {
-    mode: "simulated",
-    classification: { label: categoryLabels[report.category], confidence: "suggested" },
-    extraction: {
-      incident_type: categoryLabels[report.category],
-      time_reference: report.incidentDate,
-      location_reference: report.location.label ?? "Not provided",
-    },
-    similarity: { signal: "No duplicate check performed in this student foundation", confidence: "not_assessed" },
-    priority: {
-      suggestion: ["violence", "safety-hazard"].includes(report.category) ? "Review promptly" : "Standard review",
-      confidence: "suggested",
-    },
-    human_review_required: true,
-  };
+async function fetchCandidates(
+  supabaseAdmin: SupabaseClient<Database>,
+  category: string,
+  excludeReportId: string,
+) {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabaseAdmin
+    .from("reports")
+    .select("id, incident_date, location_label, description")
+    .eq("incident_category", category)
+    .neq("id", excludeReportId)
+    .gte("submitted_at", since)
+    .order("submitted_at", { ascending: false })
+    .limit(8);
+
+  return (data ?? []).map((row) => ({
+    report_id: row.id,
+    description: row.description,
+    incident_date: row.incident_date,
+    location_label: row.location_label,
+  }));
 }
 
 export const submitAnonymousReport = createServerFn({ method: "POST" })
