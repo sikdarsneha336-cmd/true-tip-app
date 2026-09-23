@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import type { AdvisoryAnalysis } from "@/lib/analysis.server";
 
 const locationSchema = z.object({
   mode: z.enum(["gps", "approximate", "manual"]),
@@ -34,31 +37,36 @@ function createRetrievalCode() {
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8)}`;
 }
 
-function createMockAnalysis(report: z.infer<typeof reportSchema>) {
-  const categoryLabels: Record<z.infer<typeof reportSchema>["category"], string> = {
-    violence: "Violence or threat",
-    harassment: "Harassment or intimidation",
-    theft: "Theft or property loss",
-    "safety-hazard": "Public safety hazard",
-    "suspicious-activity": "Suspicious activity",
-    other: "Other unsafe situation",
-  };
+const categoryLabels: Record<z.infer<typeof reportSchema>["category"], string> = {
+  violence: "Violence or threat",
+  harassment: "Harassment or intimidation",
+  theft: "Theft or property loss",
+  "safety-hazard": "Public safety hazard",
+  "suspicious-activity": "Suspicious activity",
+  other: "Other unsafe situation",
+};
 
-  return {
-    mode: "simulated",
-    classification: { label: categoryLabels[report.category], confidence: "suggested" },
-    extraction: {
-      incident_type: categoryLabels[report.category],
-      time_reference: report.incidentDate,
-      location_reference: report.location.label ?? "Not provided",
-    },
-    similarity: { signal: "No duplicate check performed in this student foundation", confidence: "not_assessed" },
-    priority: {
-      suggestion: ["violence", "safety-hazard"].includes(report.category) ? "Review promptly" : "Standard review",
-      confidence: "suggested",
-    },
-    human_review_required: true,
-  };
+async function fetchCandidates(
+  supabaseAdmin: SupabaseClient<Database>,
+  category: string,
+  excludeReportId: string,
+) {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabaseAdmin
+    .from("reports")
+    .select("id, incident_date, location_label, description")
+    .eq("incident_category", category)
+    .neq("id", excludeReportId)
+    .gte("submitted_at", since)
+    .order("submitted_at", { ascending: false })
+    .limit(8);
+
+  return (data ?? []).map((row) => ({
+    report_id: row.id,
+    description: row.description,
+    incident_date: row.incident_date,
+    location_label: row.location_label,
+  }));
 }
 
 export const submitAnonymousReport = createServerFn({ method: "POST" })
@@ -67,7 +75,6 @@ export const submitAnonymousReport = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const retrievalCode = createRetrievalCode();
     const retrievalCodeHash = await hashCode(retrievalCode);
-    const analysis = createMockAnalysis(data);
 
     const { data: inserted, error } = await supabaseAdmin
       .from("reports")
@@ -82,12 +89,47 @@ export const submitAnonymousReport = createServerFn({ method: "POST" })
         supporting_details: data.supportingDetails,
         retrieval_code_hash: retrievalCodeHash,
         retrieval_code_hint: `${retrievalCode.slice(0, 4)}••••••••`,
-        ai_analysis: analysis,
+        ai_analysis: null,
       })
       .select("id, submitted_at, retention_until")
       .single();
 
     if (error || !inserted) throw new Error("We could not save this report. Please try again.");
+
+    // The report is already saved; the advisory AI step below must never block
+    // or lose a submission. On any failure the report keeps an "unavailable"
+    // analysis marker and a human reviewer proceeds as usual.
+    let analysis: AdvisoryAnalysis = {
+      mode: "ai",
+      status: "unavailable",
+      human_review_required: true,
+      disclaimer:
+        "AI-generated signals are suggestions for a human reviewer. They never determine whether a report is true or fake and never reject a report.",
+      note: "AI analysis is temporarily unavailable.",
+    };
+
+    try {
+      const { runAdvisoryAnalysis } = await import("@/lib/analysis.server");
+      const candidates = await fetchCandidates(supabaseAdmin, data.category, inserted.id);
+      analysis = await runAdvisoryAnalysis({
+        category: data.category,
+        categoryLabel: categoryLabels[data.category],
+        incidentDate: data.incidentDate,
+        locationLabel: data.location.label,
+        locationMode: data.location.mode,
+        description: data.description,
+        supportingDetails: data.supportingDetails,
+        candidates,
+      });
+    } catch (aiError) {
+      console.error("Advisory AI step failed", aiError);
+    }
+
+    const { error: analysisUpdateError } = await supabaseAdmin
+      .from("reports")
+      .update({ ai_analysis: analysis })
+      .eq("id", inserted.id);
+    if (analysisUpdateError) console.error("Could not store AI analysis", analysisUpdateError);
 
     return {
       reportId: inserted.id,

@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      report_updates: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          new_status: string | null
+          note: string | null
+          officer_label: string
+          officer_user_id: string | null
+          old_status: string | null
+          report_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          new_status?: string | null
+          note?: string | null
+          officer_label?: string
+          officer_user_id?: string | null
+          old_status?: string | null
+          report_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          new_status?: string | null
+          note?: string | null
+          officer_label?: string
+          officer_user_id?: string | null
+          old_status?: string | null
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_updates_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           ai_analysis: Json
@@ -106,7 +150,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "authority"
+      app_role: "authority" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -234,7 +278,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["authority"],
+      app_role: ["authority", "admin"],
     },
   },
 } as const
