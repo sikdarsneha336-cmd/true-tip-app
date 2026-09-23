@@ -75,7 +75,6 @@ export const submitAnonymousReport = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const retrievalCode = createRetrievalCode();
     const retrievalCodeHash = await hashCode(retrievalCode);
-    const analysis = createMockAnalysis(data);
 
     const { data: inserted, error } = await supabaseAdmin
       .from("reports")
@@ -90,12 +89,47 @@ export const submitAnonymousReport = createServerFn({ method: "POST" })
         supporting_details: data.supportingDetails,
         retrieval_code_hash: retrievalCodeHash,
         retrieval_code_hint: `${retrievalCode.slice(0, 4)}••••••••`,
-        ai_analysis: analysis,
+        ai_analysis: null,
       })
       .select("id, submitted_at, retention_until")
       .single();
 
     if (error || !inserted) throw new Error("We could not save this report. Please try again.");
+
+    // The report is already saved; the advisory AI step below must never block
+    // or lose a submission. On any failure the report keeps an "unavailable"
+    // analysis marker and a human reviewer proceeds as usual.
+    let analysis: AdvisoryAnalysis = {
+      mode: "ai",
+      status: "unavailable",
+      human_review_required: true,
+      disclaimer:
+        "AI-generated signals are suggestions for a human reviewer. They never determine whether a report is true or fake and never reject a report.",
+      note: "AI analysis is temporarily unavailable.",
+    };
+
+    try {
+      const { runAdvisoryAnalysis } = await import("@/lib/analysis.server");
+      const candidates = await fetchCandidates(supabaseAdmin, data.category, inserted.id);
+      analysis = await runAdvisoryAnalysis({
+        category: data.category,
+        categoryLabel: categoryLabels[data.category],
+        incidentDate: data.incidentDate,
+        locationLabel: data.location.label,
+        locationMode: data.location.mode,
+        description: data.description,
+        supportingDetails: data.supportingDetails,
+        candidates,
+      });
+    } catch (aiError) {
+      console.error("Advisory AI step failed", aiError);
+    }
+
+    const { error: analysisUpdateError } = await supabaseAdmin
+      .from("reports")
+      .update({ ai_analysis: analysis })
+      .eq("id", inserted.id);
+    if (analysisUpdateError) console.error("Could not store AI analysis", analysisUpdateError);
 
     return {
       reportId: inserted.id,
