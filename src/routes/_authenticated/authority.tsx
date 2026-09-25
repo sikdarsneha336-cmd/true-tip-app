@@ -496,7 +496,7 @@ function AuthorityDesk() {
     try {
       await updateStatus({ data: { reportId, status } });
       await refetch();
-ecific      await queryClient.invalidateQueries({ queryKey: ["report-updates", reportId] });
+      await queryClient.invalidateQueries({ queryKey: ["report-updates", reportId] });
     } catch {
       setActionError("The status could not be updated. Please try again.");
     } finally {
