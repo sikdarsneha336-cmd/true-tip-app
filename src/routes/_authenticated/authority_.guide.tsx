@@ -3,7 +3,7 @@ import { ArrowLeft, BookOpen, LogOut, ShieldCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_authenticated/authority_.guide")({
+export const Route = createFileRoute("/_authenticated/authority_/guide")({
   ssr: false,
   head: () => ({
     meta: [
