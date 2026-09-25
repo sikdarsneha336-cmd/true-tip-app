@@ -89,7 +89,6 @@ export const submitAnonymousReport = createServerFn({ method: "POST" })
         supporting_details: data.supportingDetails,
         retrieval_code_hash: retrievalCodeHash,
         retrieval_code_hint: `${retrievalCode.slice(0, 4)}••••••••`,
-        ai_analysis: null,
       })
       .select("id, submitted_at, retention_until")
       .single();
