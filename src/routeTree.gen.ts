@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAuthorityRouteImport } from './routes/_authenticated/authority'
+import { Route as AuthenticatedAuthorityGuideRouteImport } from './routes/_authenticated/authority_.guide'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +34,24 @@ const AuthenticatedAuthorityRoute = AuthenticatedAuthorityRouteImport.update({
   path: '/authority',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAuthorityGuideRoute =
+  AuthenticatedAuthorityGuideRouteImport.update({
+    id: '/authority_/guide',
+    path: '/authority/guide',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/authority': typeof AuthenticatedAuthorityRoute
+  '/authority/guide': typeof AuthenticatedAuthorityGuideRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/authority': typeof AuthenticatedAuthorityRoute
+  '/authority/guide': typeof AuthenticatedAuthorityGuideRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,14 +59,20 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/authority': typeof AuthenticatedAuthorityRoute
+  '/_authenticated/authority_/guide': typeof AuthenticatedAuthorityGuideRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/authority'
+  fullPaths: '/' | '/auth' | '/authority' | '/authority/guide'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/authority'
+  to: '/' | '/auth' | '/authority' | '/authority/guide'
   id:
-    '__root__' | '/' | '/_authenticated' | '/auth' | '/_authenticated/authority'
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/authority'
+    | '/_authenticated/authority_/guide'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,15 +111,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuthorityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/authority_/guide': {
+      id: '/_authenticated/authority_/guide'
+      path: '/authority/guide'
+      fullPath: '/authority/guide'
+      preLoaderRoute: typeof AuthenticatedAuthorityGuideRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuthorityRoute: typeof AuthenticatedAuthorityRoute
+  AuthenticatedAuthorityGuideRoute: typeof AuthenticatedAuthorityGuideRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuthorityRoute: AuthenticatedAuthorityRoute,
+  AuthenticatedAuthorityGuideRoute: AuthenticatedAuthorityGuideRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
